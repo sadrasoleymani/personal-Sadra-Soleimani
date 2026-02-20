@@ -1,5 +1,4 @@
 // ===== Main JavaScript File =====
-
 // Wait for DOM to load
 document.addEventListener('DOMContentLoaded', () => {
     initCursor();
@@ -10,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initContactForm();
     initAOS();
     initSmoothScroll();
+    initStickyCodeBox();
+    initPhotoEffects();
+    initCodeHoverEffect();
 });
 
 // ===== Custom Cursor =====
@@ -42,11 +44,12 @@ function initCursor() {
     animate();
     
     // Hover effect for interactive elements
-    const interactiveElements = document.querySelectorAll('a, button, .btn, .skill-item, .project-card');
+    const interactiveElements = document.querySelectorAll('a, button, .btn, .project-card, .skill-item, .interest-item');
     interactiveElements.forEach(el => {
         el.addEventListener('mouseenter', () => {
             cursor.style.transform = `translate(${cursorX}px, ${cursorY}px) scale(2)`;
             cursor.style.background = 'var(--secondary)';
+            cursor.style.mixBlendMode = 'difference';
         });
         
         el.addEventListener('mouseleave', () => {
@@ -62,6 +65,7 @@ function initNavbar() {
     const navLinks = document.querySelectorAll('.nav-link');
     
     window.addEventListener('scroll', () => {
+        // Add scrolled class
         if (window.scrollY > 50) {
             navbar.classList.add('scrolled');
         } else {
@@ -89,9 +93,11 @@ function initNavbar() {
     });
 }
 
-// ===== Theme Toggle (Dark/Light) =====
+// ===== Theme Toggle =====
 function initThemeToggle() {
     const themeToggle = document.getElementById('themeToggle');
+    if (!themeToggle) return;
+    
     const icon = themeToggle.querySelector('i');
     
     // Check for saved theme preference
@@ -128,6 +134,8 @@ function initMobileMenu() {
     const menuToggle = document.getElementById('menuToggle');
     const navMenu = document.getElementById('navMenu');
     const navLinks = document.querySelectorAll('.nav-link');
+    
+    if (!menuToggle || !navMenu) return;
     
     menuToggle.addEventListener('click', () => {
         menuToggle.classList.toggle('active');
@@ -186,7 +194,7 @@ function initContactForm() {
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
         button.disabled = true;
         
-        // Simulate form submission (replace with actual API call)
+        // Simulate form submission
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         // Success message
@@ -196,7 +204,7 @@ function initContactForm() {
         // Reset form
         form.reset();
         
-        // Restore button after 3 seconds
+        // Restore button
         setTimeout(() => {
             button.innerHTML = originalText;
             button.style.background = '';
@@ -238,6 +246,20 @@ function showNotification(message, type = 'info') {
     notification.style.zIndex = '9999';
     notification.style.animation = 'slideIn 0.3s ease';
     
+    // Add animation styles
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    
     document.body.appendChild(notification);
     
     setTimeout(() => {
@@ -277,98 +299,50 @@ function initSmoothScroll() {
     });
 }
 
-// ===== Preloader (optional) =====
-window.addEventListener('load', () => {
-    document.body.classList.add('loaded');
+// ===== Sticky Code Box =====
+function initStickyCodeBox() {
+    const stickyBox = document.querySelector('.sticky-code');
+    const navbar = document.getElementById('navbar');
+    const homeSection = document.getElementById('home');
     
-    // Add animation to skill items
-    const skillItems = document.querySelectorAll('.cloud-item');
-    skillItems.forEach((item, index) => {
-        item.style.animationDelay = `${index * 0.1}s`;
+    if (!stickyBox || !navbar || !homeSection) return;
+    
+    let navbarHeight = navbar.offsetHeight;
+    let homeSectionTop = homeSection.offsetTop;
+    let homeSectionHeight = homeSection.offsetHeight;
+    let stickyBoxHeight = stickyBox.offsetHeight;
+    
+    window.addEventListener('resize', () => {
+        navbarHeight = navbar.offsetHeight;
+        homeSectionTop = homeSection.offsetTop;
+        homeSectionHeight = homeSection.offsetHeight;
+        stickyBoxHeight = stickyBox.offsetHeight;
     });
-});
-
-// ===== Parallax Effect =====
-window.addEventListener('scroll', () => {
-    const scrolled = window.scrollY;
-    const homeVisual = document.querySelector('.home-visual');
     
-    if (homeVisual) {
-        const rate = scrolled * 0.5;
-        homeVisual.style.transform = `translateY(${rate}px)`;
-    }
-});
-
-// ===== Typing Effect (optional) =====
-function initTypingEffect() {
-    const element = document.querySelector('.home-title');
-    if (!element) return;
-    
-    const text = element.innerText;
-    element.innerText = '';
-    
-    let i = 0;
-    const typing = setInterval(() => {
-        if (i < text.length) {
-            element.innerHTML += text.charAt(i);
-            i++;
-        } else {
-            clearInterval(typing);
-        }
-    }, 100);
-}
-
-// Uncomment if you want typing effect
-// initTypingEffect();
-
-// ===== Copy Email to Clipboard =====
-document.querySelectorAll('.info-item a[href^="mailto:"]').forEach(emailLink => {
-    emailLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        const email = emailLink.getAttribute('href').replace('mailto:', '');
+    window.addEventListener('scroll', () => {
+        const scrollY = window.scrollY;
+        const maxScroll = homeSectionTop + homeSectionHeight - stickyBoxHeight - navbarHeight - 100;
         
-        navigator.clipboard.writeText(email).then(() => {
-            showNotification('Email copied to clipboard!', 'success');
-        }).catch(() => {
-            showNotification('Failed to copy email', 'error');
-        });
-    });
-});
-
-// ===== Project Filter (optional enhancement) =====
-function initProjectFilter() {
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    const projects = document.querySelectorAll('.project-card');
-    
-    filterButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const filter = btn.getAttribute('data-filter');
-            
-            filterButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            projects.forEach(project => {
-                if (filter === 'all' || project.classList.contains(filter)) {
-                    project.style.display = 'block';
-                    setTimeout(() => {
-                        project.style.opacity = '1';
-                        project.style.transform = 'scale(1)';
-                    }, 10);
-                } else {
-                    project.style.opacity = '0';
-                    project.style.transform = 'scale(0.8)';
-                    setTimeout(() => {
-                        project.style.display = 'none';
-                    }, 300);
-                }
-            });
-        });
+        if (scrollY > maxScroll) {
+            stickyBox.style.position = 'absolute';
+            stickyBox.style.top = (homeSectionHeight - stickyBoxHeight - navbarHeight - 100) + 'px';
+        } else {
+            stickyBox.style.position = 'sticky';
+            stickyBox.style.top = navbarHeight + 20 + 'px';
+        }
+        
+        // Opacity effect near the end
+        const distanceToEnd = maxScroll - scrollY;
+        if (distanceToEnd < 100) {
+            const opacity = Math.max(0.3, distanceToEnd / 100);
+            stickyBox.style.opacity = opacity;
+        } else {
+            stickyBox.style.opacity = 1;
+        }
     });
 }
 
-// اضافه کردن به تابع init یا یک تابع جداگانه
-
-// ===== Photo hover effects enhancements =====
+// ===== Photo Effects =====
 function initPhotoEffects() {
     const photoFrame = document.querySelector('.photo-frame');
     if (!photoFrame) return;
@@ -397,25 +371,110 @@ function initPhotoEffects() {
             dec.style.transform = 'rotateX(0) rotateY(0)';
         });
     });
-}
-
-// اضافه کردن به DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    // ... existing code ...
-    initPhotoEffects();
     
-    // اضافه کردن lazy loading برای عکس
+    // Profile image fallback
     const profileImage = document.getElementById('profileImage');
     if (profileImage) {
         profileImage.loading = 'lazy';
         
-        // fallback اگر عکس لود نشد
         profileImage.onerror = function() {
             this.style.display = 'none';
             this.parentElement.classList.add('no-image');
+            this.parentElement.style.background = 'linear-gradient(135deg, var(--primary), var(--secondary))';
+            this.parentElement.style.display = 'flex';
+            this.parentElement.style.alignItems = 'center';
+            this.parentElement.style.justifyContent = 'center';
+            this.parentElement.innerHTML += '<span style="font-size: 4rem; opacity: 0.5;">📸</span>';
         };
     }
+}
+
+// ===== Code Hover Effect =====
+function initCodeHoverEffect() {
+    const codeLines = document.querySelectorAll('.window-content .code-var, .window-content .code-func, .window-content .code-string, .window-content .code-keyword');
+    
+    codeLines.forEach(line => {
+        line.addEventListener('mouseenter', () => {
+            line.style.textShadow = '0 0 10px currentColor';
+            line.style.transition = 'text-shadow 0.3s';
+        });
+        
+        line.addEventListener('mouseleave', () => {
+            line.style.textShadow = 'none';
+        });
+    });
+}
+
+// ===== Parallax Effect =====
+window.addEventListener('scroll', () => {
+    const scrolled = window.scrollY;
+    const homeVisual = document.querySelector('.home-visual');
+    const floatingShapes = document.querySelectorAll('.floating-shape');
+    
+    if (homeVisual && window.innerWidth > 768) {
+        const rate = scrolled * 0.1;
+        homeVisual.style.transform = `translateY(${rate}px)`;
+    }
+    
+    floatingShapes.forEach(shape => {
+        const rate = scrolled * 0.05;
+        shape.style.transform = `translate(${rate}px, ${-rate}px)`;
+    });
 });
 
-// Uncomment if you want project filtering
-// initProjectFilter();
+// ===== Copy Email to Clipboard =====
+document.querySelectorAll('.info-item a[href^="mailto:"]').forEach(emailLink => {
+    emailLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        const email = emailLink.getAttribute('href').replace('mailto:', '');
+        
+        navigator.clipboard.writeText(email).then(() => {
+            showNotification('Email copied to clipboard!', 'success');
+        }).catch(() => {
+            showNotification('Failed to copy email', 'error');
+        });
+    });
+});
+
+// ===== Loading Animation =====
+window.addEventListener('load', () => {
+    document.body.classList.add('loaded');
+    
+    // Add animation delays to cloud items
+    const cloudItems = document.querySelectorAll('.cloud-item');
+    cloudItems.forEach((item, index) => {
+        item.style.animationDelay = `${index * 0.1}s`;
+    });
+});
+
+// ===== Typing Effect for Code Box (Optional) =====
+function initTypingEffect() {
+    const codeElement = document.querySelector('.window-content code');
+    if (!codeElement) return;
+    
+    const originalHTML = codeElement.innerHTML;
+    const plainText = codeElement.innerText;
+    
+    // Only do this on first visit to home section
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                // Uncomment for typing effect
+                // typeCode(codeElement, plainText);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.5 });
+    
+    observer.observe(codeElement);
+}
+
+function typeCode(element, text, index = 0) {
+    if (index < text.length) {
+        element.innerHTML += text.charAt(index);
+        setTimeout(() => typeCode(element, text, index + 1), 20);
+    }
+}
+
+// Uncomment if you want typing effect
+// initTypingEffect();
